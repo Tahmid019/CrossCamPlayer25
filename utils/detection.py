@@ -2,10 +2,14 @@ import cv2
 from collections import defaultdict
 from .features import extract_cnn_features
 
-def detect_players(video_path, model, conf=0.3, max_frames=None):
+def detect_players(video_path, model, conf=0.3, max_frames=None, start = 0, stride = 1):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise IOError(f"Cannot open video: {video_path}")
+    
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start)
+    idx = start
+    count = 0
     
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     max_frames = min(max_frames or total_frames, total_frames)
@@ -13,12 +17,19 @@ def detect_players(video_path, model, conf=0.3, max_frames=None):
     detections = defaultdict(list)
     frames = {}
 
-    for idx in range(max_frames):
+    while cap.isOpened():
+        if max_frames is not None and count >= max_frames:
+            break
+        
         ret, frame = cap.read()
         if not ret:
             break
-
-        results = model(frame)
+        
+        if (idx - start) % stride != 0:
+            idx += 1
+            continue
+        
+        results = model(frame, verbose=False)
         frames[idx] = frame.copy()
 
         for box in results[0].boxes:
@@ -30,5 +41,8 @@ def detect_players(video_path, model, conf=0.3, max_frames=None):
                 if crop.size > 0:
                     feature = extract_cnn_features(crop)
                     detections[idx].append({'bbox': [x1, y1, x2, y2], 'feature': feature})
+        idx += 1
+        count += 1
+        
     cap.release()
     return detections, frames

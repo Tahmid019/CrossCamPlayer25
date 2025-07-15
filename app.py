@@ -11,6 +11,8 @@ from utils.detection import detect_players
 from utils.matching import match_players
 from utils.visualization import draw_boxes
 
+from config import *
+
 
 st.set_page_config(page_title="Player Matcher", layout="centered")
 
@@ -52,6 +54,7 @@ if run_button and uploaded_model and uploaded_broadcast and uploaded_tacticam:
 
         try:
             model = YOLO(model_path)
+            model.to(DEVICE)
             broadcast_dets, broadcast_frames = detect_players(broadcast_path, model, DETECTION_CONF)
             tacticam_dets, tacticam_frames = detect_players(tacticam_path, model, DETECTION_CONF)
         except Exception as e:
@@ -98,12 +101,12 @@ if "broadcast_dets" in st.session_state:
         with col1:
             b_annotated = draw_boxes(b_frame.copy(), st.session_state.broadcast_dets[selected_frame], "broadcast")
             st.image(cv2.cvtColor(b_annotated, cv2.COLOR_BGR2RGB),
-                     caption=f"Broadcast Frame {selected_frame}", use_column_width=True)
+                     caption=f"Broadcast Frame {selected_frame}")
 
         with col2:
             t_annotated = draw_boxes(t_frame.copy(), st.session_state.tacticam_dets[selected_frame], "tacticam")
             st.image(cv2.cvtColor(t_annotated, cv2.COLOR_BGR2RGB),
-                     caption=f"Tacticam Frame {selected_frame}", use_column_width=True)
+                     caption=f"Tacticam Frame {selected_frame}")
     else:
         st.warning("Frame not found for the selected index.")
 else:
