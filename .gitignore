@@ -217,3 +217,5 @@ __marimo__/
 /venv
 .env_312
 /env_312
+
+/tests
